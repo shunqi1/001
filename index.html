@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Поймай квадрат</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            padding: 10px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            /* Статичный фон для мобильных устройств */
+            background: #1a1a2e;
+            /* Анимированный градиент для десктопа */
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #e8eaed;
+            position: relative;
+            overflow-x: hidden;
+            font-size: 14px;
+        }
+
+        /* На десктопе включаем анимацию фона */
+        @media (min-width: 768px) {
+            body {
+                background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+                background-size: 400% 400%;
+                animation: gradientShift 20s ease infinite;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 5px;
+                font-size: 12px;
+                /* Усиливаем статичный фон для мобильных */
+                background: #1a1a2e;
+                background-image: 
+                    radial-gradient(circle at 25% 25%, #16213e 0%, transparent 50%),
+                    radial-gradient(circle at 75% 75%, #0f3460 0%, transparent 50%);
+            }
+        }
+
+        /* Декоративные слои фона */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(66, 165, 245, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(156, 39, 176, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(76, 175, 80, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -2;
+        }
+
+        /* Только на десктопе анимируем декоративные слои */
+        @media (min-width: 768px) {
+            body::before {
+                animation: float 25s ease-in-out infinite;
+            }
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
+            33% { transform: translate(15px, -15px) rotate(60deg); }
+            66% { transform: translate(-10px, 10px) rotate(120deg); }
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -3;
+        }
+
+        .star {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @media (max-width: 480px) {
+            .star {
+                width: 0.5px;
+                height: 0.5px;
+            }
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.5); }
+        }
+
+        h1 {
+            text-align: center;
+            margin: 10px 0;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            font-size: 1.8em;
+            color: #f1f3f4;
+            font-weight: 600;
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.4em;
+                margin: 5px 0;
+            }
+        }
+
+        /* Контроль музыки */
+        .music-controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+            z-index: 1000;
+        }
+
+        .music-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(30, 41, 59, 0.8);
+            color: #cbd5e1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .music-btn:hover {
+            background: rgba(59, 130, 246, 0.3);
+            color: #93c5fd;
+        }
+
+        .music-btn.active {
+            background: rgba(34, 197, 94, 0.3);
+            color: #4ade80;
+        }
+
+        .game-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            font-weight: bold;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        @media (max-width: 480px) {
+            .game-info {
+                font-size: 12px;
+                gap: 5px;
+                margin-bottom: 10px;
+            }
+        }
+
+        .game-info > div {
+            background: rgba(30, 41, 59, 0.4);
+            padding: 8px;
+            border-radius: 12px;
+            text-align: center;
+            color: #cbd5e1;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            backdrop-filter: blur(8px);
+        }
+
+        /* Стили для рекордов */
+        .records-section {
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 15px;
+            background: rgba(30, 41, 59, 0.4);
+            border-radius: 15px;
+            padding: 15px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .records-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .records-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #f1f3f4;
+        }
+
+        .stats-toggle {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #93c5fd;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .stats-toggle:hover {
+            background: rgba(59, 130, 246, 0.3);
+        }
+
+        .records-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .record-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .record-label {
+            color: #94a3b8;
+            font-size: 10px;
+            margin-bottom: 2px;
+        }
+
+        .record-value {
+            color: #f1f3f4;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .new-record {
+            animation: newRecordGlow 2s ease-in-out;
+        }
+
+        @keyframes newRecordGlow {
+            0%, 100% { background: rgba(0, 0, 0, 0.3); }
+            50% { background: rgba(34, 197, 94, 0.4); box-shadow: 0 0 15px rgba(34, 197, 94, 0.2); }
+        }
+
+        .detailed-stats {
+            display: none;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        .detailed-stats.show {
+            display: block;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 11px;
+        }
+
+        .stat-label {
+            color: #94a3b8;
+        }
+
+        .stat-value {
+            color: #f1f3f4;
+            font-weight: bold;
+        }
+
+        .difficulty-selector {
+            margin-bottom: 15px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .difficulty-selector h3 {
+            margin: 0 0 10px 0;
+            color: #f1f3f4;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            font-size: 1.1em;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .difficulty-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 480px) {
+            .difficulty-buttons {
+                gap: 5px;
+            }
+        }
+
+        .difficulty-btn {
+            padding: 12px 8px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1.5px solid rgba(148, 163, 184, 0.2);
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(30, 41, 59, 0.4);
+            color: #cbd5e1;
+            text-shadow: none;
+            backdrop-filter: blur(10px);
+            text-align: center;
+            touch-action: manipulation;
+        }
+
+        .difficulty-btn:active {
+            transform: scale(0.96);
+        }
+
+        .difficulty-btn.active {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            border-color: rgba(59, 130, 246, 0.4);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+        }
+
+        .difficulty-info {
+            font-size: 10px;
+            color: #94a3b8;
+            text-align: center;
+            line-height: 1.3;
+            padding: 0 10px;
+        }
+
+        .game-area {
+            width: 100%;
+            max-width: 500px;
+            height: 50vh;
+            min-height: 300px;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        @media (max-width: 480px) {
+            .game-area {
+                height: 45vh;
+                min-height: 250px;
+                background: rgba(255,255,255,0.08);
+            }
+        }
+
+        .game-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(255, 107, 107, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 70% 70%, rgba(76, 175, 80, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        /* Анимация только на десктопе */
+        @media (min-width: 768px) {
+            .game-area::before {
+                animation: gameAreaGlow 8s ease-in-out infinite;
+            }
+        }
+
+        @keyframes gameAreaGlow {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .square {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, #ff6b6b, #ffd93d);
+            border-radius: 8px;
+            position: absolute;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            border: 2px solid rgba(255,255,255,0.8);
+            touch-action: manipulation;
+        }
+
+        /* Пульсация только на десктопе */
+        @media (min-width: 768px) {
+            .square {
+                animation: squarePulse 2s ease-in-out infinite;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .square {
+                width: 35px;
+                height: 35px;
+            }
+        }
+
+        @keyframes squarePulse {
+            0%, 100% { box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+            50% { box-shadow: 0 4px 20px rgba(0,0,0,0.5), 0 0 15px rgba(255,255,255,0.3); }
+        }
+
+        .square:active {
+            transform: scale(0.9);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.6);
+        }
+
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: bold;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: linear-gradient(45deg, #ff6b6b, #ffd93d);
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            touch-action: manipulation;
+        }
+
+        @media (max-width: 480px) {
+            button {
+                font-size: 12px;
+                padding: 10px;
+            }
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.2);
+            width: 90%;
+            max-width: 300px;
+        }
+
+        .game-over h2 {
+            margin: 0 0 15px 0;
+            font-size: 1.3em;
+        }
+
+        .game-over p {
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+
+        .game-over button {
+            margin-top: 15px;
+            width: 100%;
+        }
+
+        .record-notification {
+            background: linear-gradient(45deg, #22c55e, #16a34a);
+            color: white;
+            padding: 8px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 0.9em;
+            font-weight: bold;
+            text-align: center;
+            animation: recordPulse 1s ease-in-out;
+        }
+
+        @keyframes recordPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .fade-out {
+            animation: fadeOut 0.3s ease-out forwards;
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; transform: scale(1); }
+            to { opacity: 0; transform: scale(0); }
+        }
+
+        .miss-effect {
+            animation: missEffect 0.2s ease-out;
+        }
+
+        @keyframes missEffect {
+            0% { background: rgba(255,255,255,0.05); }
+            50% { background: rgba(255,0,0,0.2); }
+            100% { background: rgba(255,255,255,0.05); }
+        }
+
+        .vibrate {
+            animation: vibrate 0.3s ease-in-out;
+        }
+
+        @keyframes vibrate {
+            0%, 20%, 40%, 60%, 80%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+        }
+
+        /* Уменьшение анимаций для пользователей с настройками accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+            
+            body {
+                background: #1a1a2e !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    
+    <!-- Контроль музыки -->
+    <div class="music-controls">
+        <button class="music-btn" id="musicToggle" title="Включить/выключить музыку">🎵</button>
+        <button class="music-btn" id="sfxToggle" title="Включить/выключить звуки">🔊</button>
+    </div>
+    
+    <h1>🎯 Поймай квадрат</h1>
+    
+    <div class="game-info">
+        <div>Очки: <span id="score">0</span></div>
+        <div>Время: <span id="time">30</span>с</div>
+        <div>Промахи: <span id="misses">0</span></div>
+        <div>Уровень: <span id="currentDifficulty">Легко</span></div>
+    </div>
+
+    <!-- Секция рекордов -->
+    <div class="records-section">
+        <div class="records-header">
+            <div class="records-title">🏆 Рекорды</div>
+            <button class="stats-toggle" onclick="toggleDetailedStats()">Статистика</button>
+        </div>
+        <div class="records-grid">
+            <div class="record-item">
+                <div class="record-label">Лучший результат</div>
+                <div class="record-value" id="bestScore">0</div>
+            </div>
+            <div class="record-item">
+                <div class="record-label">Всего игр</div>
+                <div class="record-value" id="totalGames">0</div>
+            </div>
+            <div class="record-item">
+                <div class="record-label">Среднее очков</div>
+                <div class="record-value" id="averageScore">0</div>
+            </div>
+            <div class="record-item">
+                <div class="record-label">Время игры</div>
+                <div class="record-value" id="totalTime">0м</div>
+            </div>
+        </div>
+        <div class="detailed-stats" id="detailedStats">
+            <div class="stat-row">
+                <span class="stat-label">Лучший результат (Легко):</span>
+                <span class="stat-value" id="bestEasy">0</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Лучший результат (Средне):</span>
+                <span class="stat-value" id="bestMedium">0</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Лучший результат (Сложно):</span>
+                <span class="stat-value" id="bestHard">0</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Лучший результат (Экстрим):</span>
+                <span class="stat-value" id="bestExtreme">0</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Всего попаданий:</span>
+                <span class="stat-value" id="totalHits">0</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Всего промахов:</span>
+                <span class="stat-value" id="totalMisses">0</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Точность:</span>
+                <span class="stat-value" id="accuracy">100%</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="difficulty-selector">
+        <h3>Выберите сложность:</h3>
+        <div class="difficulty-buttons">
+            <button class="difficulty-btn active" onclick="setDifficulty('easy')">
+                🟢 Легко
+            </button>
+            <button class="difficulty-btn" onclick="setDifficulty('medium')">
+                🟡 Средне
+            </button>
+            <button class="difficulty-btn" onclick="setDifficulty('hard')">
+                🔴 Сложно
+            </button>
+            <button class="difficulty-btn" onclick="setDifficulty('extreme')">
+                🔥 Экстрим
+            </button>
+        </div>
+        <div class="difficulty-info" id="difficultyInfo">
+            Легко: медленные квадраты, живут 4 сек
+        </div>
+    </div>
+
+    <div class="game-area" id="gameArea">
+        <div class="game-over" id="gameOver" style="display: none;">
+            <h2>Игра окончена!</h2>
+            <p>Результат: <span id="finalScore">0</span> очков</p>
+            <p>Промахов: <span id="finalMisses">0</span></p>
+            <div id="recordNotification"></div>
+            <button onclick="startGame()">Играть снова</button>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button onclick="startGame()" id="startBtn">Начать</button>
+        <button onclick="pauseGame()" id="pauseBtn" disabled>Пауза</button>
+        <button onclick="resetGame()" id="resetBtn">Сброс</button>
+    </div>
+
+    <script>
+        let score = 0;
+        let timeLeft = 30;
+        let misses = 0;
+        let gameActive = false;
+        let gameTimer;
+        let squareTimer;
+        let isPaused = false;
+        let currentDifficulty = 'easy';
+        let activeSquares = [];
+        let gameStartTime;
+        let hits = 0;
+
+        // Система звуков
+        class AudioSystem {
+            constructor() {
+                this.audioContext = null;
+                this.musicEnabled = true;
+                this.sfxEnabled = true;
+                this.backgroundMusic = null;
+                this.musicGain = null;
+                this.sfxGain = null;
+                this.initAudio();
+                this.loadSettings();
+            }
+
+            async initAudio() {
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    // Создаем узлы громкости
+                    this.musicGain = this.audioContext.createGain();
+                    this.sfxGain = this.audioContext.createGain();
+                    
+                    this.musicGain.connect(this.audioContext.destination);
+                    this.sfxGain.connect(this.audioContext.destination);
+                    
+                    this.musicGain.gain.value = 0.3;
+                    this.sfxGain.gain.value = 0.5;
+                    
+                    this.createBackgroundMusic();
+                } catch (e) {
+                    console.log('Web Audio API не поддерживается');
+                }
+            }
+
+            loadSettings() {
+                const settings = JSON.parse(localStorage.getItem('gameAudioSettings') || '{}');
+                this.musicEnabled = settings.music !== false;
+                this.sfxEnabled = settings.sfx !== false;
+                this.updateUI();
+            }
+
+            saveSettings() {
+                localStorage.setItem('gameAudioSettings', JSON.stringify({
+                    music: this.musicEnabled,
+                    sfx: this.sfxEnabled
+                }));
+            }
+
+            updateUI() {
+                const musicBtn = document.getElementById('musicToggle');
+                const sfxBtn = document.getElementById('sfxToggle');
+                
+                musicBtn.classList.toggle('active', this.musicEnabled);
+                sfxBtn.classList.toggle('active', this.sfxEnabled);
+                
+                musicBtn.textContent = this.musicEnabled ? '🎵' : '🔇';
+                sfxBtn.textContent = this.sfxEnabled ? '🔊' : '🔇';
+            }
+
+            createBackgroundMusic() {
+                if (!this.audioContext) return;
+
+                // Создаем простую мелодию с помощью осцилляторов
+                const notes = [
+                    { freq: 261.63, duration: 0.5 }, // C4
+                    { freq: 293.66, duration: 0.5 }, // D4
+                    { freq: 329.63, duration: 0.5 }, // E4
+                    { freq: 349.23, duration: 0.5 }, // F4
+                    { freq: 392.00, duration: 0.5 }, // G4
+                    { freq: 440.00, duration: 0.5 }, // A4
+                    { freq: 493.88, duration: 0.5 }, // B4
+                    { freq: 523.25, duration: 1.0 }  // C5
+                ];
+
+                let currentTime = this.audioContext.currentTime;
+                
+                const playMelody = () => {
+                    if (!this.musicEnabled || !gameActive) return;
+                    
+                    notes.forEach((note, index) => {
+                        const oscillator = this.audioContext.createOscillator();
+                        const noteGain = this.audioContext.createGain();
+                        
+                        oscillator.connect(noteGain);
+                        noteGain.connect(this.musicGain);
+                        
+                        oscillator.frequency.setValueAtTime(note.freq, currentTime);
+                        oscillator.type = 'sine';
+                        
+                        noteGain.gain.setValueAtTime(0, currentTime);
+                        noteGain.gain.linearRampToValueAtTime(0.1, currentTime + 0.01);
+                        noteGain.gain.exponentialRampToValueAtTime(0.001, currentTime + note.duration);
+                        
+                        oscillator.start(currentTime);
+                        oscillator.stop(currentTime + note.duration);
+                        
+                        currentTime += note.duration;
+                    });
+                    
+                    // Повторяем мелодию
+                    setTimeout(playMelody, notes.reduce((sum, note) => sum + note.duration, 0) * 1000 + 2000);
+                };
+
+                if (gameActive && this.musicEnabled) {
+                    playMelody();
+                }
+            }
+
+            playHitSound() {
+                if (!this.audioContext || !this.sfxEnabled) return;
+
+                const oscillator = this.audioContext.createOscillator();
+                const gain = this.audioContext.createGain();
+                
+                oscillator.connect(gain);
+                gain.connect(this.sfxGain);
+                
+                oscillator.frequency.linearRampToValueAtTime(1200, this.audioContext.currentTime + 0.1);
+                oscillator.type = 'square';
+                
+                gain.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 0.2);
+                
+                oscillator.start();
+                oscillator.stop(this.audioContext.currentTime + 0.2);
+            }
+
+            playMissSound() {
+                if (!this.audioContext || !this.sfxEnabled) return;
+
+                const oscillator = this.audioContext.createOscillator();
+                const gain = this.audioContext.createGain();
+                
+                oscillator.connect(gain);
+                gain.connect(this.sfxGain);
+                
+                oscillator.frequency.setValueAtTime(200, this.audioContext.currentTime);
+                oscillator.frequency.linearRampToValueAtTime(100, this.audioContext.currentTime + 0.3);
+                oscillator.type = 'sawtooth';
+                
+                gain.gain.setValueAtTime(0.2, this.audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 0.3);
+                
+                oscillator.start();
+                oscillator.stop(this.audioContext.currentTime + 0.3);
+            }
+
+            toggleMusic() {
+                this.musicEnabled = !this.musicEnabled;
+                this.updateUI();
+                this.saveSettings();
+                
+                if (this.musicEnabled && gameActive) {
+                    this.createBackgroundMusic();
+                }
+            }
+
+            toggleSFX() {
+                this.sfxEnabled = !this.sfxEnabled;
+                this.updateUI();
+                this.saveSettings();
+            }
+        }
+
+        const audioSystem = new AudioSystem();
+
+        // Настройки сложности
+        const difficulties = {
+            easy: {
+                name: 'Легко',
+                spawnInterval: 1500,
+                squareLifetime: 4000,
+                info: 'Легко: медленные квадраты, живут 4 сек'
+            },
+            medium: {
+                name: 'Средне',
+                spawnInterval: 1200,
+                squareLifetime: 3000,
+                info: 'Средне: средняя скорость, живут 3 сек'
+            },
+            hard: {
+                name: 'Сложно',
+                spawnInterval: 800,
+                squareLifetime: 2000,
+                info: 'Сложно: быстрые квадраты, живут 2 сек'
+            },
+            extreme: {
+                name: 'Экстрим',
+                spawnInterval: 500,
+                squareLifetime: 1500,
+                info: 'Экстрим: очень быстро, живут 1.5 сек'
+            }
+        };
+
+        // Инициализация звездного фона
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            const starCount = window.innerWidth < 768 ? 30 : 50;
+            
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+
+        // Загрузка статистики
+        function loadStats() {
+            const stats = JSON.parse(localStorage.getItem('catchSquareStats') || '{}');
+            return {
+                bestScore: stats.bestScore || 0,
+                totalGames: stats.totalGames || 0,
+                totalScore: stats.totalScore || 0,
+                totalTime: stats.totalTime || 0,
+                bestEasy: stats.bestEasy || 0,
+                bestMedium: stats.bestMedium || 0,
+                bestHard: stats.bestHard || 0,
+                bestExtreme: stats.bestExtreme || 0,
+                totalHits: stats.totalHits || 0,
+                totalMisses: stats.totalMisses || 0
+            };
+        }
+
+        // Сохранение статистики
+        function saveStats(newStats) {
+            localStorage.setItem('catchSquareStats', JSON.stringify(newStats));
+        }
+
+        // Обновление отображения статистики
+        function updateStatsDisplay() {
+            const stats = loadStats();
+            
+            document.getElementById('bestScore').textContent = stats.bestScore;
+            document.getElementById('totalGames').textContent = stats.totalGames;
+            document.getElementById('averageScore').textContent = 
+                stats.totalGames > 0 ? Math.round(stats.totalScore / stats.totalGames) : 0;
+            document.getElementById('totalTime').textContent = Math.round(stats.totalTime / 60) + 'м';
+            
+            document.getElementById('bestEasy').textContent = stats.bestEasy;
+            document.getElementById('bestMedium').textContent = stats.bestMedium;
+            document.getElementById('bestHard').textContent = stats.bestHard;
+            document.getElementById('bestExtreme').textContent = stats.bestExtreme;
+            document.getElementById('totalHits').textContent = stats.totalHits;
+            document.getElementById('totalMisses').textContent = stats.totalMisses;
+            
+            const totalAttempts = stats.totalHits + stats.totalMisses;
+            const accuracy = totalAttempts > 0 ? Math.round((stats.totalHits / totalAttempts) * 100) : 100;
+            document.getElementById('accuracy').textContent = accuracy + '%';
+        }
+
+        // Переключение детальной статистики
+        function toggleDetailedStats() {
+            const detailedStats = document.getElementById('detailedStats');
+            detailedStats.classList.toggle('show');
+        }
+
+        // Установка сложности
+        function setDifficulty(difficulty) {
+            if (gameActive && !isPaused) return;
+            
+            currentDifficulty = difficulty;
+            
+            // Обновляем кнопки
+            document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Обновляем информацию
+            document.getElementById('difficultyInfo').textContent = difficulties[difficulty].info;
+            document.getElementById('currentDifficulty').textContent = difficulties[difficulty].name;
+        }
+
+        // Создание квадрата
+        function createSquare() {
+            if (!gameActive || isPaused) return;
+            
+            const gameArea = document.getElementById('gameArea');
+            const square = document.createElement('div');
+            square.className = 'square';
+            
+            const maxX = gameArea.clientWidth - 40;
+            const maxY = gameArea.clientHeight - 40;
+            
+            const x = Math.random() * maxX;
+            const y = Math.random() * maxY;
+            
+            square.style.left = x + 'px';
+            square.style.top = y + 'px';
+            
+            const squareId = 'square_' + Date.now() + '_' + Math.random();
+            square.id = squareId;
+            
+            square.addEventListener('click', function(e) {
+                e.stopPropagation();
+                hitSquare(square);
+            });
+            
+            gameArea.appendChild(square);
+            activeSquares.push(squareId);
+            
+            // Автоматическое исчезновение
+            setTimeout(() => {
+                if (document.getElementById(squareId)) {
+                    missSquare(square);
+                }
+            }, difficulties[currentDifficulty].squareLifetime);
+        }
+
+        // Попадание по квадрату
+        function hitSquare(square) {
+            if (!gameActive || isPaused) return;
+            
+            score += 10;
+            hits++;
+            document.getElementById('score').textContent = score;
+            
+            // Удаляем из активных квадратов
+            const index = activeSquares.indexOf(square.id);
+            if (index > -1) {
+                activeSquares.splice(index, 1);
+            }
+            
+            // Анимация исчезновения
+            square.classList.add('fade-out');
+            audioSystem.playHitSound();
+            
+            setTimeout(() => {
+                if (square.parentNode) {
+                    square.parentNode.removeChild(square);
+                }
+            }, 300);
+        }
+
+        // Промах
+        function missSquare(square) {
+            if (!gameActive) return;
+            
+            misses++;
+            document.getElementById('misses').textContent = misses;
+            
+            // Удаляем из активных квадратов
+            const index = activeSquares.indexOf(square.id);
+            if (index > -1) {
+                activeSquares.splice(index, 1);
+            }
+            
+            // Эффект промаха
+            const gameArea = document.getElementById('gameArea');
+            gameArea.classList.add('miss-effect');
+            audioSystem.playMissSound();
+            
+            setTimeout(() => {
+                gameArea.classList.remove('miss-effect');
+            }, 200);
+            
+            // Анимация исчезновения
+            square.classList.add('fade-out');
+            setTimeout(() => {
+                if (square.parentNode) {
+                    square.parentNode.removeChild(square);
+                }
+            }, 300);
+        }
+
+        // Клик по пустому месту
+        function handleGameAreaClick(e) {
+            if (!gameActive || isPaused || e.target.classList.contains('square')) return;
+            
+            misses++;
+            document.getElementById('misses').textContent = misses;
+            
+            const gameArea = document.getElementById('gameArea');
+            gameArea.classList.add('miss-effect');
+            audioSystem.playMissSound();
+            
+            setTimeout(() => {
+                gameArea.classList.remove('miss-effect');
+            }, 200);
+        }
+
+        // Начало игры
+        function startGame() {
+            if (gameActive && !isPaused) return;
+            
+            if (isPaused) {
+                // Возобновление игры
+                isPaused = false;
+                document.getElementById('pauseBtn').disabled = false;
+                document.getElementById('startBtn').textContent = 'Начать';
+                
+                // Возобновляем таймеры
+                gameTimer = setInterval(updateTimer, 1000);
+                squareTimer = setInterval(createSquare, difficulties[currentDifficulty].spawnInterval);
+                
+                return;
+            }
+            
+            // Новая игра
+            score = 0;
+            timeLeft = 30;
+            misses = 0;
+            hits = 0;
+            gameActive = true;
+            isPaused = false;
+            activeSquares = [];
+            gameStartTime = Date.now();
+            
+            // Обновляем UI
+            document.getElementById('score').textContent = score;
+            document.getElementById('time').textContent = timeLeft;
+            document.getElementById('misses').textContent = misses;
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('startBtn').textContent = 'Начать';
+            document.getElementById('pauseBtn').disabled = false;
+            
+            // Очищаем игровое поле
+            const gameArea = document.getElementById('gameArea');
+            const squares = gameArea.querySelectorAll('.square');
+            squares.forEach(square => square.remove());
+            
+            // Запускаем таймеры
+            gameTimer = setInterval(updateTimer, 1000);
+            squareTimer = setInterval(createSquare, difficulties[currentDifficulty].spawnInterval);
+            
+            // Запускаем музыку
+            audioSystem.createBackgroundMusic();
+        }
+
+        // Пауза
+        function pauseGame() {
+            if (!gameActive || isPaused) return;
+            
+            isPaused = true;
+            clearInterval(gameTimer);
+            clearInterval(squareTimer);
+            
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('startBtn').textContent = 'Продолжить';
+        }
+
+        // Сброс игры
+        function resetGame() {
+            gameActive = false;
+            isPaused = false;
+            
+            clearInterval(gameTimer);
+            clearInterval(squareTimer);
+            
+            // Сброс значений
+            score = 0;
+            timeLeft = 30;
+            misses = 0;
+            hits = 0;
+            activeSquares = [];
+            
+            // Обновляем UI
+            document.getElementById('score').textContent = score;
+            document.getElementById('time').textContent = timeLeft;
+            document.getElementById('misses').textContent = misses;
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('startBtn').textContent = 'Начать';
+            document.getElementById('pauseBtn').disabled = true;
+            
+            // Очищаем игровое поле
+            const gameArea = document.getElementById('gameArea');
+            const squares = gameArea.querySelectorAll('.square');
+            squares.forEach(square => square.remove());
+        }
+
+        // Обновление таймера
+        function updateTimer() {
+            timeLeft--;
+            document.getElementById('time').textContent = timeLeft;
+            
+            if (timeLeft <= 0) {
+                endGame();
+            }
+        }
+
+        // Окончание игры
+        function endGame() {
+            gameActive = false;
+            clearInterval(gameTimer);
+            clearInterval(squareTimer);
+            
+            // Вычисляем время игры
+            const gameTime = gameStartTime ? (Date.now() - gameStartTime) / 1000 : 30;
+            
+            // Загружаем текущую статистику
+            const stats = loadStats();
+            
+            // Проверяем рекорды
+            let newRecords = [];
+            let isNewBestScore = false;
+            
+            if (score > stats.bestScore) {
+                newRecords.push('Новый лучший результат!');
+                isNewBestScore = true;
+            }
+            
+            const difficultyKey = 'best' + currentDifficulty.charAt(0).toUpperCase() + currentDifficulty.slice(1);
+            if (score > stats[difficultyKey]) {
+                newRecords.push(`Новый рекорд на сложности "${difficulties[currentDifficulty].name}"!`);
+            }
+            
+            // Обновляем статистику
+            const newStats = {
+                ...stats,
+                bestScore: Math.max(stats.bestScore, score),
+                totalGames: stats.totalGames + 1,
+                totalScore: stats.totalScore + score,
+                totalTime: stats.totalTime + gameTime,
+                [difficultyKey]: Math.max(stats[difficultyKey], score),
+                totalHits: stats.totalHits + hits,
+                totalMisses: stats.totalMisses + misses
+            };
+            
+            saveStats(newStats);
+            updateStatsDisplay();
+            
+            // Показываем результат
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalMisses').textContent = misses;
+            
+            const recordNotification = document.getElementById('recordNotification');
+            if (newRecords.length > 0) {
+                recordNotification.innerHTML = newRecords.map(record => 
+                    `<div class="record-notification">${record}</div>`
+                ).join('');
+                
+                // Подсвечиваем новые рекорды
+                if (isNewBestScore) {
+                    document.getElementById('bestScore').parentElement.classList.add('new-record');
+                    setTimeout(() => {
+                        document.getElementById('bestScore').parentElement.classList.remove('new-record');
+                    }, 2000);
+                }
+            } else {
+                recordNotification.innerHTML = '';
+            }
+            
+            document.getElementById('gameOver').style.display = 'block';
+            document.getElementById('pauseBtn').disabled = true;
+        }
+
+        // Обработчики событий
+        document.getElementById('gameArea').addEventListener('click', handleGameAreaClick);
+
+        // Обработчики кнопок управления музыкой
+        document.getElementById('musicToggle').addEventListener('click', () => {
+            audioSystem.toggleMusic();
+        });
+
+        document.getElementById('sfxToggle').addEventListener('click', () => {
+            audioSystem.toggleSFX();
+        });
+
+        // Инициализация при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            createStars();
+            updateStatsDisplay();
+            setDifficulty('easy');
+        });
+
+        // Предотвращение случайного закрытия страницы во время игры
+        window.addEventListener('beforeunload', function(e) {
+            if (gameActive && !isPaused) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+    </script>
+</body>
+</html>
